@@ -27,4 +27,13 @@ void initialize_time();
 /* Delay for given milliseconds */
 void delay(uint32_t ms);
 
+void start_timer();
+void stop_timer();
+
+/* Returns the difference between the "start_o" timestamp
+ * and the current time. Updates the parameter "start_o" to
+ * the current system time automatically
+ */
+uint32_t time_delta(uint32_t* start_o);
+
 #endif

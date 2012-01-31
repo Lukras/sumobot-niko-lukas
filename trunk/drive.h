@@ -34,12 +34,14 @@
 void drive_forward(int8_t speed);
 void drive_backward(int8_t speed);
 
+void stop();
+
 /* Spin in place to a direction with a given speed from 0-100 */
 void spin_right(int8_t speed);
 void spin_left(int8_t speed);
 
 /* Turn to a direction; Define the turn steepness from 0-100 */
-void turn_right(int8_t speed, uint8_t steep);
-void turn_left(int8_t speed, uint8_t steep);
+void turn_right(int16_t speed, int16_t steep);
+void turn_left(int16_t speed, int16_t steep);
 
 #endif
