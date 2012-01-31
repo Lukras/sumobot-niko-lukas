@@ -14,7 +14,7 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include <util/delay.h>
+#include "time.h"
 
 #define QTI_PORT		PORTB
 #define QTI_DDR			DDRB
@@ -23,11 +23,13 @@
 #define RR				PB0
 #define LR				PB1
 
-#define BLACK_THRES		300
+#define DEFAULT_BLACK	300
+#define MAX_BLACK		5000
 
 /*** Functions ***/
 
 void initialize_QTI();
+void calibrate_QTI();
 uint32_t right_raw();
 uint32_t left_raw();
 
