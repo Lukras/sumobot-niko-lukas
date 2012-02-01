@@ -117,11 +117,11 @@ uint8_t search(){
 			t = 0;
 			dir = (dir==RIGHT) ? LEFT : RIGHT; 
 		}
-		if (dir==RIGHT)
+		if (dir==RIGHT){
 			turn_right(100, 100);
-		else
+		}else{
 			turn_left(100, 100);
-	
+		}
 		if (left_outside() || right_outside())
 			return BORDER;
 
@@ -237,19 +237,43 @@ uint8_t attack(){
 }
 
 uint8_t border(){
-	while (1){
-		if (right_outside()){
-			spin_left(100);
-			delay(300);
-		} else if (left_outside()){
-			spin_right(100);
-			delay(300);
-		} else {
-			return SEARCH;
-		}
-	}
-
-	return BORDER;
+    uint16_t spin_delay;
+    uint32_t t_start = time_since(0);
+    uint32_t t_elapsed;
+    drive_forward(100);
+    if (right_outside()){
+        while(((t_elapsed = time_since(t_start)) < DET_TRESH_MS) && !left_outside());
+        /* bot was rather parallel to border so turn 90° */ 
+        if (t_elapsed >= DET_TRESH_MS){
+		    spin_delay = 500;                     
+        /* other qti detected border before timeout
+         * so turn according to how long it took the other qti
+         * to find the border
+         */
+        }else{
+            //turn between 90° and 180°
+            spin_delay = 800;
+        }
+        spin_left(100);
+        delay(spin_delay);
+    }else if (left_outside()){
+        while(((t_elapsed = time_since(t_start)) < DET_TRESH_MS) && !right_outside());
+        /* bot was rather parallel to border so turn 90° */ 
+        if (t_elapsed >= DET_TRESH_MS){
+            spin_delay = 500;                     
+        /* other qti detected border before timeout
+         * so turn according to how long it took the other qti
+         * to find the border
+         */
+        }else{
+            spin_delay = 800;
+        }
+        spin_right(100);
+		delay(spin_delay);
+    }else{
+        //this must not happen!
+    }
+    return SEARCH;
 }
 
 /* Set clock frequency to 8 MHz */
