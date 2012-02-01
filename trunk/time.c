@@ -113,3 +113,7 @@ uint32_t time_delta(uint32_t* start_o){
 	*start_o = get_sys_ms();
 	return *start_o-start;
 }
+
+uint32_t time_since(uint32_t t_start){
+	return get_sys_ms()-t_start;
+}

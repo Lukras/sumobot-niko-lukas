@@ -36,4 +36,9 @@ void stop_timer();
  */
 uint32_t time_delta(uint32_t* start_o);
 
+/* Returns the time elapsed since t_start
+ * without updating t_start
+ */
+uint32_t time_since(uint32_t t_start);
+
 #endif
