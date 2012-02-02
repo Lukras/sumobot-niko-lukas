@@ -23,6 +23,10 @@
 #define DET_RIGHT		PD0
 #define DET_LEFT		PD1
 
+/* Original is 104 */
+/* Good = 90, 93, 100 */
+#define IR_SENSITIVITY	93
+
 #define IR_SAMPLES		3
 #define IR_INTERVAL		1	// ms
 #define IR_THRESHOLD	2

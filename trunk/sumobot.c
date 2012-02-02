@@ -38,14 +38,21 @@
 #define RIGHT		1
 #define LEFT		2
 
-/* Attack PID constants */
+/* Attack PID constants LE
 #define KP			60
 #define KI			7
 #define MIN			25
 #define TIMEOUT		1200
+*/
+
+/* Attack PID constants HE */
+#define KP			50			// Constant reaction
+#define KI			3			// Incremental reaction
+#define MIN			25			// Minimum turn
+#define TIMEOUT		1500		// Timeout on target lost (ms)
 
 /* Search constants */
-#define SWEEP_MS	600
+#define SWEEP_MS	1000
 
 /********* Main functions **********
  *
@@ -113,6 +120,9 @@ uint8_t search(){
 	time_delta(&start_time);
 	while (1){
 		t += (timestamp != 0) ? time_delta(&timestamp) : 0&time_delta(&timestamp);
+		
+		drive_forward(50);
+		/*
 		if (t > SWEEP_MS){
 			t = 0;
 			dir = (dir==RIGHT) ? LEFT : RIGHT; 
@@ -121,7 +131,12 @@ uint8_t search(){
 			turn_right(100, 100);
 		}else{
 			turn_left(100, 100);
+<<<<<<< .mine
+		*/
+
+=======
 		}
+>>>>>>> .r9
 		if (left_outside() || right_outside())
 			return BORDER;
 
@@ -163,11 +178,11 @@ uint8_t attack(){
 		 *
 		 **************************************/
 
-		/* Sensor */
+		/* Read sensors */
 		opp_right = obstacle_right();
 		opp_left = obstacle_left();
 
-		/* Act on suspicion when unknown */
+		/* Act on suspicion if target lost */
 		if (!opp_right && !opp_left){
 			opp_right = (opp_last == RIGHT || opp_last == FRONT);
 			opp_left = (opp_last == LEFT || opp_last == FRONT);
@@ -187,10 +202,10 @@ uint8_t attack(){
 			t = 0;
 		}
 
-		/* Adjustments */
+		/* Calculate the turn components */
 		if (opp_right && opp_left){
 			p = 0;
-			i = 0;
+			i = 0; // allows for sharp reactions, no movement learning
 			opp_last = FRONT;
 		} else if (opp_right){
 			p = 1;
@@ -202,12 +217,12 @@ uint8_t attack(){
 			opp_last = LEFT;
 		}
 
-		/* Weighted sum */
+		/* Weighted sum of turn the components */
 		u = KP*p+KI*i;
 		if (u>200) u = 200;
 		if (u<-200) u = -200;
 
-		/* Control */
+		/* Actually control the turn */
 		if (u==0)
 			drive_forward(100);
 		if (u>0)
@@ -236,7 +251,34 @@ uint8_t attack(){
 	return ATTACK;
 }
 
+#define DET_TRESH_MS	500
+#define DEG_90_MS		500
+#define DEG_180_MS		800
+
 uint8_t border(){
+<<<<<<< .mine
+	void (*spin[])(int8_t speed) = {spin_right, spin_left};
+	uint8_t (*outside[])() = {right_outside, left_outside};
+	uint8_t side = (right_outside()) ? 1 : 0; // left : right
+	if (!side && !left_outside()) return SEARCH; // No border detected
+	
+    uint16_t spin_delay;
+    uint32_t t_start = time_since(0);
+    uint32_t t_elapsed;
+	
+    drive_forward(100);
+	while(((t_elapsed = time_since(t_start)) < DET_TRESH_MS) && !outside[side]());
+	
+	/* Turn according to how long it took the other qti
+	 * to find the border. Either 90 or 180 degrees.
+	 */
+	spin_delay = (t_elapsed >= DET_TRESH_MS) ? DEG_90_MS : DEG_180_MS;
+
+	spin[side](100);
+	delay(spin_delay);
+  
+    return SEARCH;
+=======
     uint16_t spin_delay;
     uint32_t t_start = time_since(0);
     uint32_t t_elapsed;
@@ -274,6 +316,7 @@ uint8_t border(){
         //this must not happen!
     }
     return SEARCH;
+>>>>>>> .r9
 }
 
 /* Set clock frequency to 8 MHz */

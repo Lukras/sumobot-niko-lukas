@@ -11,9 +11,7 @@ void initialize_IR_LEDs(){
     DDRB |= 1<<PB4; // OC0A as output for IR LEDs
     TCCR0A |= 1<<WGM01 | 1<<COM0A0; // CTC mode and toggle OC0A on compare match
 
-	/* Original is 104 */
-	/* Good = 90, 93, 100 */
-    OCR0A = 101;
+    OCR0A = IR_SENSITIVITY;
 
 	sei();
 }
