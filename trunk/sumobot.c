@@ -45,7 +45,14 @@
 #define TIMEOUT		1200
 
 /* Search constants */
-#define SWEEP_MS	600
+#define SWEEP_MS	1200
+
+/* Border constants */
+#define DET_TRESH_MS 250
+#define DEG_45_MS   250
+#define DEG_135_MS   650
+#define DEG_90_MS   500
+#define DEG_180_MS  800 
 
 /********* Main functions **********
  *
@@ -108,7 +115,8 @@ uint8_t search(){
 
 	uint32_t t=0;
 	uint32_t timestamp=0;
-	uint8_t dir = RIGHT;
+	static uint8_t dir = RIGHT;
+    uint8_t just_been_in_b_mode = 1;
 
 	time_delta(&start_time);
 	while (1){
@@ -116,14 +124,24 @@ uint8_t search(){
 		if (t > SWEEP_MS){
 			t = 0;
 			dir = (dir==RIGHT) ? LEFT : RIGHT; 
+            just_been_in_b_mode = 0;
 		}
 		if (dir==RIGHT){
 			turn_right(100, 100);
 		}else{
 			turn_left(100, 100);
 		}
-		if (left_outside() || right_outside())
-			return BORDER;
+
+        if (!just_been_in_b_mode){
+    		if (left_outside()){
+                dir = RIGHT;
+                return BORDER;
+            }else if (right_outside()){
+                dir = LEFT;
+                return BORDER;
+            }
+        }
+			
 
 		if (obstacle_right() || obstacle_left())
 			return ATTACK;
@@ -245,14 +263,14 @@ uint8_t border(){
         while(((t_elapsed = time_since(t_start)) < DET_TRESH_MS) && !left_outside());
         /* bot was rather parallel to border so turn 90° */ 
         if (t_elapsed >= DET_TRESH_MS){
-		    spin_delay = 500;                     
+		    spin_delay = 250;                     
         /* other qti detected border before timeout
          * so turn according to how long it took the other qti
          * to find the border
          */
         }else{
             //turn between 90° and 180°
-            spin_delay = 800;
+            spin_delay = 550;
         }
         spin_left(100);
         delay(spin_delay);
@@ -260,13 +278,14 @@ uint8_t border(){
         while(((t_elapsed = time_since(t_start)) < DET_TRESH_MS) && !right_outside());
         /* bot was rather parallel to border so turn 90° */ 
         if (t_elapsed >= DET_TRESH_MS){
-            spin_delay = 500;                     
+            spin_delay = 250;                     
         /* other qti detected border before timeout
          * so turn according to how long it took the other qti
          * to find the border
          */
         }else{
-            spin_delay = 800;
+            //turn between 90° and 180°
+            spin_delay = 550;
         }
         spin_right(100);
 		delay(spin_delay);
