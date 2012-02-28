@@ -25,15 +25,18 @@
 
 /* Original is 104 */
 /* Good = 90, 93, 100 */
-#define IR_SENSITIVITY	93
+#define IR_SENSITIVITY	104
 
-#define IR_SAMPLES		3
+#define IR_SAMPLES		5
 #define IR_INTERVAL		1	// ms
-#define IR_THRESHOLD	2
+#define IR_THRESHOLD	4
 
 void initialize_IR_LEDs();
 void initialize_IR_detectors();
 uint8_t obstacle_right();
 uint8_t obstacle_left();
+
+void start_IR_LEDs();
+void stop_IR_LEDs();
 
 #endif

@@ -38,11 +38,18 @@
 #define RIGHT		1
 #define LEFT		2
 
-/* Attack PID constants */
+/* Attack PID constants LE
 #define KP			60
 #define KI			7
 #define MIN			25
 #define TIMEOUT		1200
+*/
+
+/* Attack PID constants HE */
+#define KP			50			// Constant reaction
+#define KI			4			// Incremental reaction
+#define MIN			25			// Minimum turn
+#define TIMEOUT		1500		// Timeout on target lost (ms)
 
 /* Search constants */
 #define SWEEP_MS	1200
@@ -66,6 +73,7 @@ void initialize_LEDs();
 void turn_LED1(uint8_t value);
 void turn_LED2(uint8_t value);
 inline uint32_t sat_substract(uint32_t a, uint32_t b);
+uint32_t limit(int32_t a, int32_t max);
 
 /********* Logic patterns *********
  *
@@ -155,20 +163,15 @@ uint8_t search(){
 uint8_t attack(){
 	const uint16_t stage_duration=50; // ms
 	int32_t p=0, i=0, u=0;
-	uint32_t t=0, timestamp=0, start_time=0;
+	uint32_t timeout=0, start_time=0;
 
 	/* Where the opponent is seen or was last seen */
 	uint8_t opp_right=0, opp_left=0, opp_last=FRONT;
 
 	time_delta(&start_time);
 	while (1){
-		if (left_outside() || right_outside()){
-			i = 0;
-			t = 0;
-			timestamp = 0;
-			opp_last = FRONT;
+		if (left_outside() || right_outside())
 			return BORDER;
-		}
 
 		/********* PID control ****************
 		 *
@@ -181,57 +184,9 @@ uint8_t attack(){
 		 *
 		 **************************************/
 
-		/* Sensor */
+		/* Read sensors */
 		opp_right = obstacle_right();
 		opp_left = obstacle_left();
-
-		/* Act on suspicion when unknown */
-		if (!opp_right && !opp_left){
-			opp_right = (opp_last == RIGHT || opp_last == FRONT);
-			opp_left = (opp_last == LEFT || opp_last == FRONT);
-
-			/* Track how many milliseconds we have not seen anything */
-			t += (timestamp != 0) ? time_delta(&timestamp) : 0&time_delta(&timestamp);
-		
-			/* Reset attack on timeout */
-			if (t>TIMEOUT){
-				timestamp = 0;
-				t = 0;
-				i = 0;
-				return SEARCH;
-			}
-		} else {
-			timestamp = 0;
-			t = 0;
-		}
-
-		/* Adjustments */
-		if (opp_right && opp_left){
-			p = 0;
-			i = 0;
-			opp_last = FRONT;
-		} else if (opp_right){
-			p = 1;
-			if (opp_last == RIGHT) ++i;
-			opp_last = RIGHT;
-		} else if (opp_left){
-			p = -1;
-			if (opp_last == LEFT) --i;
-			opp_last = LEFT;
-		}
-
-		/* Weighted sum */
-		u = KP*p+KI*i;
-		if (u>200) u = 200;
-		if (u<-200) u = -200;
-
-		/* Control */
-		if (u==0)
-			drive_forward(100);
-		if (u>0)
-			turn_left(100, u+MIN);
-		else if (u<0)
-			turn_right(100, (-u)+MIN);
 
 		/* Debug */
 		if (opp_right && opp_left){
@@ -247,6 +202,45 @@ uint8_t attack(){
 			turn_LED1(OFF);
 			turn_LED2(OFF);
 		}
+
+		/* Act on suspicion if target lost */
+		if (!opp_right && !opp_left){
+			opp_right = (opp_last == RIGHT || opp_last == FRONT);
+			opp_left = (opp_last == LEFT || opp_last == FRONT);
+		
+			/* Reset attack on timeout */
+			if (timeout == 0) timeout = time_since(0);
+			if (time_since(timeout)>TIMEOUT)
+				return SEARCH;
+		} else {
+			timeout = 0;
+		}
+
+		/* Calculate the turn components */
+		if (opp_right && opp_left){
+			p = 0;
+			i = 0; // allows for sharp reactions, no movement learning
+			opp_last = FRONT;
+		} else if (opp_right){
+			p = 1;
+			++i;
+			opp_last = RIGHT;
+		} else if (opp_left){
+			p = -1;
+			--i;
+			opp_last = LEFT;
+		}
+
+		/* Weighted sum of the turn components */
+		u = limit(KP*p+KI*i, 200);
+
+		/* Actually control the turn */
+		if (u==0)
+			drive_forward(100);
+		if (u>0)
+			turn_left(100, u+MIN);
+		else if (u<0)
+			turn_right(100, (-u)+MIN);
 
 		delay(sat_substract(stage_duration, time_delta(&start_time)));
 	}
@@ -325,4 +319,10 @@ void turn_LED2(uint8_t value){
 
 inline uint32_t sat_substract(uint32_t a, uint32_t b){
 	return (b>a) ? 0 : a-b;
+}
+
+uint32_t limit(int32_t a, int32_t max){
+	if (a>max) return max;
+	if (a<-max) return -max;
+	return a;
 }
