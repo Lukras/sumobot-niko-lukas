@@ -127,7 +127,10 @@ uint8_t search(){
 	uint32_t t=0;
 	uint32_t timestamp=0;
 	static uint8_t dir = RIGHT;
-    uint8_t just_been_in_b_mode = 1;
+    /* just been in border evasion mode
+     * used to avoid reentering border evasion mode too often
+     */
+    static uint8_t just_been_in_b_mode = 0;
 
 	time_delta(&start_time);
 	while (1){
@@ -145,9 +148,11 @@ uint8_t search(){
 
         if (!just_been_in_b_mode){
     		if (left_outside()){
+                just_been_in_b_mode = 1;
                 dir = RIGHT;
                 return BORDER;
             }else if (right_outside()){
+                just_been_in_b_mode = 1;
                 dir = LEFT;
                 return BORDER;
             }
