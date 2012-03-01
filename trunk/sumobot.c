@@ -49,7 +49,7 @@
 #define KP			50			// Constant reaction
 #define KI			4			// Incremental reaction
 #define MIN			25			// Minimum turn
-#define TIMEOUT		1500		// Timeout on target lost (ms)
+#define TIMEOUT		2500		// Timeout on target lost (ms)
 
 /* Search constants */
 #define SWEEP_MS	1200
@@ -119,6 +119,9 @@ int main(){
 /*** Function implementations ***/
 
 uint8_t search(){
+	turn_LED1(OFF);
+	turn_LED2(OFF);
+
 	uint32_t start_time=0, stage_duration=50;
 
 	uint32_t t=0;
@@ -208,9 +211,9 @@ uint8_t attack(){
 			opp_right = (opp_last == RIGHT || opp_last == FRONT);
 			opp_left = (opp_last == LEFT || opp_last == FRONT);
 		
-			/* Reset attack on timeout */
+			/* Reset attack on timeout unless we are charging */
 			if (timeout == 0) timeout = time_since(0);
-			if (time_since(timeout)>TIMEOUT)
+			if (time_since(timeout)>TIMEOUT && opp_last != FRONT)
 				return SEARCH;
 		} else {
 			timeout = 0;
@@ -223,11 +226,11 @@ uint8_t attack(){
 			opp_last = FRONT;
 		} else if (opp_right){
 			p = 1;
-			++i;
+			if (timeout==0) ++i;
 			opp_last = RIGHT;
 		} else if (opp_left){
 			p = -1;
-			--i;
+			if (timeout==0) --i;
 			opp_last = LEFT;
 		}
 
@@ -249,6 +252,9 @@ uint8_t attack(){
 }
 
 uint8_t border(){
+	turn_LED1(OFF);
+	turn_LED2(OFF);
+
     uint16_t spin_delay;
     uint32_t t_start = time_since(0);
     uint32_t t_elapsed;
