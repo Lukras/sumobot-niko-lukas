@@ -34,7 +34,7 @@
 #define BORDER		2
 
 /* Position constants */
-#define FRONT		0
+#define FRONT		3
 #define RIGHT		1
 #define LEFT		2
 
@@ -49,10 +49,11 @@
 #define KP			50			// Constant reaction
 #define KI			4			// Incremental reaction
 #define MIN			25			// Minimum turn
-#define TIMEOUT		2500		// Timeout on target lost (ms)
+#define TIMEOUT		1000		// Timeout on target lost (ms)
+#define HIT_TRESH	5			// Detections before reaction
 
 /* Search constants */
-#define SWEEP_MS	1200
+#define SWEEP_MS	1100
 
 /* Border constants */
 #define DET_TRESH_MS 250
@@ -97,12 +98,12 @@ int main(){
 	initialize_QTI();
 	initialize_IR_LEDs();
 	initialize_IR_detectors();
-
+	
 	stop();
-	delay(1000);
-
-	/* The Sumobot must initially be on black playarea */
+	start_IR_LEDs();
 	calibrate_QTI();
+	delay(5000);
+	stop_IR_LEDs();
 
 	uint8_t current_stage=SEARCH;
 	uint8_t (*action[])() = {search, attack, border};
@@ -127,7 +128,7 @@ uint8_t search(){
 	uint32_t t=0;
 	uint32_t timestamp=0;
 	static uint8_t dir = RIGHT;
-    /* just been in border evasion mode
+	/* just been in border evasion mode
      * used to avoid reentering border evasion mode too often
      */
     static uint8_t just_been_in_b_mode = 0;
@@ -148,17 +149,16 @@ uint8_t search(){
 
         if (!just_been_in_b_mode){
     		if (left_outside()){
-                just_been_in_b_mode = 1;
+				just_been_in_b_mode = 1;
                 dir = RIGHT;
                 return BORDER;
             }else if (right_outside()){
-                just_been_in_b_mode = 1;
+				just_been_in_b_mode = 1;
                 dir = LEFT;
                 return BORDER;
             }
         }
-			
-
+		
 		if (obstacle_right() || obstacle_left())
 			return ATTACK;
 
@@ -175,6 +175,7 @@ uint8_t attack(){
 
 	/* Where the opponent is seen or was last seen */
 	uint8_t opp_right=0, opp_left=0, opp_last=FRONT;
+	uint8_t hits=0;
 
 	time_delta(&start_time);
 	while (1){
@@ -195,6 +196,16 @@ uint8_t attack(){
 		/* Read sensors */
 		opp_right = obstacle_right();
 		opp_left = obstacle_left();
+
+		/* Filtering */
+		if (opp_right || opp_left){
+			if (++hits<HIT_TRESH){
+				opp_right = 0;
+				opp_left = 0;
+			}
+		} else {
+			hits = 0;
+		}
 
 		/* Debug */
 		if (opp_right && opp_left){
@@ -275,7 +286,7 @@ uint8_t border(){
          */
         }else{
             //turn between 90° and 180°
-            spin_delay = 550;
+           	spin_delay = 550;
         }
         spin_left(100);
         delay(spin_delay);
