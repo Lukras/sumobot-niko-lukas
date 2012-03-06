@@ -25,7 +25,7 @@
 
 /* Original is 104 */
 /* Good = 90, 93, 100 */
-#define IR_SENSITIVITY	104
+#define IR_SENSITIVITY	100
 
 #define IR_SAMPLES		5
 #define IR_INTERVAL		1	// ms
